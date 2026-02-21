@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CLEWS-OG exchange file v1",
+  "description": "Exchange structure for CLEWS outputs mapped to OG-Core-like parameters.",
+  "type": "object",
+  "required": ["years", "technologies", "parameters"],
+  "properties": {
+    "years": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "minItems": 1
+    },
+    "technologies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "total_discounted_cost": { "$ref": "#/definitions/parameterMap" },
+        "annual_emissions": { "$ref": "#/definitions/parameterMap" },
+        "technology_activity": { "$ref": "#/definitions/parameterMap" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "parameterMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "number" },
+        "propertyNames": {
+          "anyOf": [
+            { "type": "string" },
+            { "type": "integer" }
+          ]
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "years": [2020, 2021],
+      "technologies": ["SolarPV", "Wind"],
+      "parameters": {
+        "total_discounted_cost": {
+          "SolarPV": { "2020": 120.0, "2021": 140.0 },
+          "Wind": { "2020": 110.0, "2021": 130.0 }
+        },
+        "annual_emissions": {
+          "SolarPV": { "2020": 50.0, "2021": 45.0 }
+        },
+        "technology_activity": {
+          "Wind": { "2020": 280.0, "2021": 300.0 }
+        }
+      }
+    }
+  ]
+}
