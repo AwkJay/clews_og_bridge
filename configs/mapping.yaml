@@ -1,0 +1,33 @@
+technology_to_sector:
+  SolarPV: energy
+  Wind: energy
+  TechA: energy
+  TechB: transport
+
+sector_to_industry:
+  energy: utilities
+  transport: transportation
+
+industry_indices:
+  utilities: 0
+  transportation: 1
+
+cost_elasticities:
+  energy: 0.3
+  transport: 0.15
+
+variable_to_parameter:
+  total_discounted_cost: Z
+  annual_emissions: None
+  total_annual_technology_activity: alpha_production
+
+unmapped_policy: log
+
+units_contract:
+  total_discounted_cost: Million USD
+  annual_emissions: Mt CO2
+  total_annual_technology_activity: PJ
+
+baseline_sectoral_costs:
+  energy: 100.0
+  transport: 50.0
