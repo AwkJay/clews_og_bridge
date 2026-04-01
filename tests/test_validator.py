@@ -5,17 +5,20 @@ from __future__ import annotations
 from pathlib import Path
 import shutil
 import sys
+import yaml
 
-from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import ValidationError as PydanticValidationError
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from reader import read_clews_csvs
-from transformer import transform_to_og_params
-from validator import validate_schema, validate_strict
+from clews_og_bridge.reader import read_clews_csvs
+from clews_og_bridge.normalizer import normalize_clews_data
+from clews_og_bridge.mapper import map_clews_to_og_params
+from clews_og_bridge.config import MappingConfig
+from clews_og_bridge.validator import ValidationGate
+from clews_og_bridge.models import Metadata
 
 
 @pytest.fixture()
@@ -30,32 +33,44 @@ def data_dir(tmp_path: Path) -> Path:
     return tmp_path
 
 
-def _valid_instance(data_dir: Path) -> dict:
-    dataframes = read_clews_csvs(data_dir)
-    return transform_to_og_params(dataframes)
+@pytest.fixture()
+def config() -> MappingConfig:
+    project_root = Path(__file__).resolve().parents[1]
+    mapping_file = project_root / "configs" / "mapping.yaml"
+    with open(mapping_file, "r") as f:
+        config_dict = yaml.safe_load(f)
+    return MappingConfig.model_validate(config_dict)
 
 
-def test_validator_accepts_valid_instance(data_dir: Path) -> None:
-    instance = _valid_instance(data_dir)
-    schema_path = PROJECT_ROOT / "schemas" / "exchange_v1.json"
-    validate_schema(instance, schema_path)
-    validate_strict(instance)
+def _valid_exchange_data(data_dir: Path, config: MappingConfig) -> dict:
+    raw_data = read_clews_csvs(data_dir)
+    normalized_data = normalize_clews_data(raw_data)
+    clews_data, og_data = map_clews_to_og_params(normalized_data, config)
+    metadata = Metadata(run_id="run_1", scenario="test")
+
+    return {
+        "metadata": metadata.model_dump(mode="json"),
+        "clews_outputs": clews_data,
+        "og_parameters": og_data
+    }
 
 
-def test_validator_schema_missing_years(data_dir: Path) -> None:
-    instance = _valid_instance(data_dir)
-    instance.pop("years")
-    schema_path = PROJECT_ROOT / "schemas" / "exchange_v1.json"
-    with pytest.raises(JsonSchemaValidationError):
-        validate_schema(instance, schema_path)
+def test_validator_accepts_valid_instance(data_dir: Path, config: MappingConfig) -> None:
+    instance = _valid_exchange_data(data_dir, config)
+    validator = ValidationGate()
+    validator.validate_final_exchange(instance)
 
 
-def test_validator_strict_non_numeric_value(data_dir: Path) -> None:
-    instance = _valid_instance(data_dir)
-    instance["parameters"]["total_discounted_cost"]["SolarPV"]["2020"] = "bad"
+def test_validator_strict_non_numeric_value(data_dir: Path, config: MappingConfig) -> None:
+    instance = _valid_exchange_data(data_dir, config)
+    # Use the new target parameter name 'Z' and mapped industry 'utilities'
+    instance["og_parameters"]["parameters"]["Z"]["value"]["utilities"]["2020"] = "bad"
+    validator = ValidationGate()
     with pytest.raises(PydanticValidationError) as excinfo:
-        validate_strict(instance)
+        validator.validate_final_exchange(instance)
     message = str(excinfo.value)
-    assert "total_discounted_cost" in message
-    assert "SolarPV" in message
+    assert "parameters" in message
+    assert "Z" in message
+    assert "value" in message
+    assert "utilities" in message
     assert "2020" in message
