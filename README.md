@@ -1,93 +1,282 @@
-# clews_og_bridge
+# CLEWS → OG-Core Semantic Integration Bridge
 
-This repository contains a small Python project that helps bridge data between **CLEWS model outputs** and **OG-Core style datasets**.
+A structured, validated transformation layer that maps CLEWS physical system outputs into economically meaningful OG-Core parameters.
 
-The main purpose of this project is to read CSV outputs produced by CLEWS/OSeMOSYS energy system models and convert them into a structured format that can be used in economic modeling workflows. Since these models often use different data layouts, the tool provides a simple pipeline that standardizes and validates the data before exporting it as a JSON exchange file.
+## The Problem
 
-The codebase is written for **Python 3.12** and has been tested primarily on **Windows 11**, although it should work on other platforms as well.
+CLEWS and OG-Core operate on fundamentally different abstractions. 
+
+- **CLEWS** → physical system (energy, emissions, technologies) 
+- **OG-Core** → macroeconomic equilibrium (TFP, sectoral production) 
+
+The challenge is not data format conversion — it is **semantic translation**. 
+
+Naively passing outputs between the models leads to: 
+- incorrect economic interpretation 
+- unstable model behavior 
+- misleading policy conclusions 
+
+This project focuses on solving that gap explicitly.
+
+## What This Project Does
+
+This repository implements a semantic transformation pipeline that: 
+
+1. Parses CLEWS outputs (CSV) 
+2. Normalizes units and structure 
+3. Applies explicit economic mappings 
+4. Validates data (structural + numeric + economic) 
+5. Produces OG-Core-compatible parameter inputs 
+
+The system is designed to be: 
+- transparent 
+- configurable 
+- reproducible 
+- extensible 
+
+## Why This Matters 
+
+Energy–economy modeling is used to guide real policy decisions. 
+
+If the integration between models is incorrect: 
+- emissions policies can appear effective when they are not 
+- economic impacts can be misestimated 
+- cross-sector feedback loops are missed entirely 
+
+This project ensures that: 
+- physical system outputs are translated into economically meaningful signals 
+- assumptions are explicit and auditable 
+- model coupling does not introduce silent errors 
+
+In short, this is about making integrated policy modeling **trustworthy**. 
+
+This becomes especially important in multi-sector policy analysis, where errors in one model propagate across the entire system.
+
+## Architecture Overview
+
+The system is structured into modular layers: 
+
+CLEWS CSV → Parser → Normalizer → Mapper → Validator → OG-Core Parameters
+
+### Pipeline Flow (Simplified) 
+
+```text
+CLEWS CSV 
+   ↓ 
+Parser → Normalizer → Mapper → Validator 
+   ↓ 
+OG-Core Parameter Payload 
+```
+
+Each stage enforces constraints before passing data forward. 
+
+This ordering ensures that invalid assumptions are detected early, before they propagate into model execution.
+
+### Key Components
+
+- [pipeline.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/pipeline.py) → execution flow 
+- [mapper.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/mapper.py) → orchestration layer 
+- [transformers/](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/transformers/) → economic logic 
+- [config.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/config.py) → mapping rules 
+- [models.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/models.py) → schema definitions
+
+## Development Approach & Evolution
+
+This project was not built in one step. It evolved through multiple iterations, each addressing a specific limitation.
+
+### Phase 1 — Basic Pipeline 
+
+Initial version: 
+- read CLEWS outputs 
+- mapped directly to OG-Core inputs 
+
+Issues identified: 
+- implicit assumptions 
+- no validation 
+- incorrect aggregation logic
+
+### Phase 1.5 — Semantic Mapping Layer 
+
+Improvements: 
+- introduced technology → sector mapping 
+- added elasticity-based transformations 
+- replaced implicit logic with explicit rules 
+
+Key realization: 
+> Mapping is not mechanical — it is economic interpretation.
+
+### Phase 2 — OG-Core Compatibility 
+
+Improvements: 
+- introduced sector → industry mapping 
+- enforced dimensionless TFP (Z) 
+- normalized production weights 
+
+Added: 
+- strict validation constraints 
+- parameter shape enforcement
+
+### Phase 2.6 — Integration Hardening 
+
+Key upgrades: 
+- explicit economic interpretation of parameters 
+- mapping trace metadata 
+- strict schema validation 
+- baseline normalization for stability 
+
+Focus: 
+> prevent silent failure and invalid model behavior
+
+### Phase 3 — Architecture Refactor 
+
+Major redesign: 
+- introduced modular transformer architecture 
+- separated configuration from logic 
+- isolated economic transformations 
+
+Result: 
+- extensible system 
+- testable components 
+- maintainable structure
+
+## Example Mapping
+
+Total Factor Productivity (Z) is derived from cost signals: 
+
+Z = (C_base / C_current)^α 
+
+Where: 
+- C_base → baseline cost 
+- C_current → current cost 
+- α → elasticity parameter 
+
+Interpretation: 
+Lower costs → interpreted as higher effective productivity (under the chosen elasticity assumption)
+
+## Example Output
+
+Generated OG-Core parameter payload (simplified): 
+
+```json 
+{ 
+  "parameters": { 
+    "Z": { 
+      "value": { 
+        "utilities": { 
+          "2020": 1.0, 
+          "2021": 0.87 
+        } 
+      }, 
+      "units": "dimensionless", 
+      "og_core_meaning": "Total Factor Productivity (proxy from cost signals)" 
+    } 
+  }, 
+  "mapping_trace": { 
+    "Z": { 
+      "source_variable": "total_discounted_cost", 
+      "transformation": "Z = (C_base / C_current)^alpha", 
+      "aggregation": "sector-level sum", 
+      "elasticity": 0.5 
+    } 
+  } 
+} 
+```
+
+This trace makes every transformation: 
+- **explicit** 
+- **auditable** 
+- **reproducible** 
 
 ---
 
-## What the project does
+## Validation Strategy
 
-The pipeline performs four main steps:
+The system enforces validation at multiple levels: 
 
-1. **Read** CLEWS output tables from CSV files.
-2. **Transform** the tables into a consistent internal structure.
-3. **Validate** the resulting dataset using JSON Schema and Pydantic models.
-4. **Write** the validated data to a portable JSON exchange file.
+- Structural → schema + shape 
+- Numeric → bounds (Z > 0, weights sum to 1) 
+- Economic → consistency checks 
 
-The goal is to reduce manual data preparation when connecting energy system models with macroeconomic models.
+Invalid data is rejected early to prevent: 
+- incorrect model runs 
+- silent failures
 
----
+## Testing
 
-## Project structure
+The system includes: 
 
-```
-clews_og_bridge/
+- unit tests (transformers) 
+- integration tests (pipeline) 
+- compatibility tests (OG-Core) 
 
-src/
-    reader.py        # loads and normalizes CLEWS CSV outputs
-    transformer.py   # converts tables into the exchange structure
-    validator.py     # schema and type validation
-    writer.py        # safe JSON export
+Example: 
+`pytest -v`
+Tests cover:
+- transformation correctness (unit level)
+- pipeline integrity (integration level)
+- OG-Core compatibility (contract level)
 
-schemas/
-    exchange_v1.json
+## Design Principles
 
-examples/
-    run_pipeline.py  # simple CLI pipeline example
+- Explicit over implicit 
+- Validation before execution 
+- Config-driven mappings 
+- Reproducibility by design 
+- Separation of concerns
 
-tests/
-    unit tests and sample data
-```
+## Extending the System 
 
----
+New mappings can be added without modifying core logic. 
 
-## Installation
+Steps: 
+1. Define mapping rules in `mapping.yaml` 
+2. Implement a transformer in `transformers/` 
+3. Register it in the mapper layer 
 
-Create a virtual environment and install dependencies.
+This allows: 
+- adding new economic variables 
+- experimenting with alternative mappings 
+- adapting to different country models 
 
-```
-pip install -r requirements.txt
-```
+The architecture is intentionally designed to support extension without breaking existing behavior. 
 
-You can then import the package in Python:
+This avoids coupling new features to existing logic, reducing regression risk.
 
-```
-import clews_og_bridge
-```
+## Current Limitations
 
----
+- Reverse ETL (OG-Core → CLEWS) not yet implemented 
+- Limited to selected CLEWS variables 
+- Assumes predefined sector mappings 
 
-## Running the example pipeline
+These are planned for future extensions.
 
-A small CLI example is provided in the `examples` directory.
+## Future Work
 
-```
-python examples/run_pipeline.py <input_directory> <output_file>
-```
+- bidirectional coupling (reverse ETL) 
+- iterative convergence module 
+- scenario comparison tools 
+- integration with MUIOGO runtime
 
-The script reads the CLEWS CSV files from the input directory and writes the processed JSON exchange file.
+## Usage
 
----
-
-## Notes for Windows users
-
-Paths in the project use Python's `pathlib` module to avoid issues with Windows path separators.
-
-Example:
-
-```
-from pathlib import Path
-
-input_dir = Path(r"C:\data") / "inputs"
+```bash 
+python -m clews_og_bridge.cli run --input-dir tests/data --mapping-file configs/mapping.yaml --output-file output.json --scenario "test" --run-id "001"
 ```
 
----
+## Key Insight 
 
-## Motivation
+The hardest part of this project was not engineering. 
 
-Energy system models and macroeconomic models are often used together in policy analysis, but their data formats are usually not directly compatible. This project is a small attempt to simplify that connection by providing a consistent way to transform and validate CLEWS outputs before passing them to other tools.
+It was deciding what the numbers *mean*. 
 
-The repository mainly serves as an experimental data bridge and a starting point for building reproducible pipelines between energy and economic modeling workflows.
+At multiple points, simple transformations “worked” technically, but produced economically meaningless results. 
+
+That realization shaped the final system: 
+- every transformation is explicit 
+- every assumption is traceable 
+- every output is validated 
+
+This is what turns a pipeline into a model integration system. 
+
+
+This becomes especially important in multi-sector policy analysis, where errors in one model propagate across the entire system.
