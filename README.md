@@ -74,11 +74,11 @@ This ordering ensures that invalid assumptions are detected early, before they p
 
 ### Key Components
 
-- [pipeline.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/pipeline.py) → execution flow 
-- [mapper.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/mapper.py) → orchestration layer 
-- [transformers/](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/transformers/) → economic logic 
-- [config.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/config.py) → mapping rules 
-- [models.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/models.py) → schema definitions
+- [pipeline.py](clews_og_bridge/pipeline.py) → execution flow 
+- [mapper.py](clews_og_bridge/mapper.py) → orchestration layer 
+- [transformers/](clews_og_bridge/transformers/) → economic logic 
+- [config.py](clews_og_bridge/config.py) → mapping rules 
+- [models.py](clews_og_bridge/models.py) → schema definitions
 
 ## Development Approach & Evolution
 
