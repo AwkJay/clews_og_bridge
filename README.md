@@ -2,6 +2,52 @@
 
 A structured, validated transformation layer that maps CLEWS physical system outputs into economically meaningful OG-Core parameters.
 
+## Live Demo
+
+[![CI](https://github.com/AwkJay/clews_og_bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/AwkJay/clews_og_bridge/actions)
+
+### Run locally
+
+```bash
+# Install
+pip install -e .
+
+# Start API
+uvicorn main:app --reload --port 8000
+
+# API docs (auto-generated)
+start http://localhost:8000/docs
+
+# Start demo UI (in a separate terminal)
+streamlit run streamlit_app.py
+```
+
+### API Contract
+
+**POST /transform**
+
+| Parameter | Type | Description |
+|---|---|---|
+| total_discounted_cost | CSV file | TotalDiscountedCost.csv from CLEWS |
+| total_annual_technology_activity | CSV file | TotalAnnualTechnologyActivity.csv |
+| annual_emissions | CSV file | AnnualEmissions.csv |
+| scenario | string | Scenario name (e.g. mauritius_baseline) |
+| run_id | string | Unique run identifier |
+| country | string | Optional country label |
+
+**Response:** ExchangeModel JSON with metadata, clews_outputs, og_parameters, mapping_trace
+
+**Example curl:**
+```bash
+curl -X POST http://localhost:8000/transform \
+  -F "total_discounted_cost=@tests/data/TotalDiscountedCost.csv" \
+  -F "total_annual_technology_activity=@tests/data/TotalAnnualTechnologyActivity.csv" \
+  -F "annual_emissions=@tests/data/AnnualEmissions.csv" \
+  -F "scenario=mauritius_baseline" \
+  -F "run_id=test_001" \
+  -F "country=Mauritius"
+```
+
 ## The Problem
 
 CLEWS and OG-Core operate on fundamentally different abstractions. 
@@ -74,11 +120,11 @@ This ordering ensures that invalid assumptions are detected early, before they p
 
 ### Key Components
 
-- [pipeline.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/pipeline.py) → execution flow 
-- [mapper.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/mapper.py) → orchestration layer 
-- [transformers/](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/transformers/) → economic logic 
-- [config.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/config.py) → mapping rules 
-- [models.py](file:///c:/Users/kant4/OneDrive/Documents/gsoc/UN/src/clews_og_bridge/models.py) → schema definitions
+- [pipeline.py](src/clews_og_bridge/pipeline.py) → execution flow 
+- [mapper.py](src/clews_og_bridge/mapper.py) → orchestration layer 
+- [transformers/](src/clews_og_bridge/transformers/) → economic logic 
+- [config.py](src/clews_og_bridge/config.py) → mapping rules 
+- [models.py](src/clews_og_bridge/models.py) → schema definitions
 
 ## Development Approach & Evolution
 
@@ -260,7 +306,7 @@ These are planned for future extensions.
 ## Usage
 
 ```bash 
-python -m clews_og_bridge.cli run --input-dir tests/data --mapping-file configs/mapping.yaml --output-file output.json --scenario "test" --run-id "001"
+python -m clews_og_bridge.cli run --input-dir tests/data --mapping-file configs/mapping.yaml --output-file examples/example_output.json --scenario "test" --run-id "001"
 ```
 
 ## Key Insight 

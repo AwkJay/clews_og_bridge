@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "run_id": "001",
+    "schema_version": "1.2.0",
+    "timestamp": "2026-04-09T17:50:18.125477",
+    "scenario": "test",
+    "country": null,
+    "pipeline_version": "1.0.0"
+  },
+  "clews_outputs": {
+    "years": [
+      2020,
+      2021
+    ],
+    "technologies": [
+      "SolarPV",
+      "Wind"
+    ],
+    "data": {
+      "total_discounted_cost": {
+        "SolarPV": {
+          "2020": 120.0,
+          "2021": 140.0
+        },
+        "Wind": {
+          "2020": 110.0
+        }
+      },
+      "annual_emissions": {
+        "SolarPV": {
+          "2020": 50.0
+        },
+        "Wind": {
+          "2020": 40.0,
+          "2021": 45.0
+        }
+      },
+      "total_annual_technology_activity": {
+        "SolarPV": {
+          "2020": 280.0,
+          "2021": 290.0
+        },
+        "Wind": {
+          "2021": 300.0
+        }
+      }
+    }
+  },
+  "og_parameters": {
+    "parameters": {
+      "Z": {
+        "value": {
+          "utilities": {
+            "2020": 0.7788999019954612,
+            "2021": 0.9039857599458092
+          }
+        },
+        "dimensions": {
+          "names": [
+            "time",
+            "industry"
+          ],
+          "industry_indices": {
+            "utilities": 0,
+            "transportation": 1
+          }
+        },
+        "units": "dimensionless",
+        "og_core_meaning": "Total Factor Productivity (TFP) level by industry and year."
+      },
+      "alpha_production": {
+        "value": {
+          "utilities": {
+            "2020": 1.0,
+            "2021": 1.0
+          }
+        },
+        "dimensions": {
+          "names": [
+            "time",
+            "industry"
+          ],
+          "industry_indices": {
+            "utilities": 0,
+            "transportation": 1
+          }
+        },
+        "units": "dimensionless",
+        "og_core_meaning": "Industry weights in the aggregate production function."
+      }
+    },
+    "mapping_trace": {
+      "Z": {
+        "source_variable": "total_discounted_cost",
+        "target_parameter": "Z",
+        "economic_interpretation": "Productivity Proxy: Effective productivity derived from cost signals.",
+        "injection_location": "update_specifications -> production function",
+        "parameter_role": "scaling factor for sectoral TFP",
+        "transformation_type": "productivity_relative_to_cost",
+        "formula": "Z = (Cost_base / Cost_current)^alpha",
+        "input_unit": "Million USD",
+        "aggregation_rule": "sum",
+        "baseline_reference": "Configured per sector",
+        "elasticity_used": 0.3
+      },
+      "alpha_production": {
+        "source_variable": "total_annual_technology_activity",
+        "target_parameter": "alpha_production",
+        "economic_interpretation": "Production Weights: Relative importance of sectoral activity in aggregate output.",
+        "injection_location": "update_specifications -> aggregator function",
+        "parameter_role": "sectoral distribution weight",
+        "transformation_type": "sector_production_weight_normalization",
+        "formula": "Industry Share (Normalized to unity)",
+        "input_unit": "PJ",
+        "aggregation_rule": "sum",
+        "baseline_reference": null,
+        "elasticity_used": null
+      }
+    }
+  }
+}

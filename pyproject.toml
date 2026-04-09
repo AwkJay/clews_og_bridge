@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clews-og-bridge"
+version = "0.1.0"
+description = "Semantic integration bridge: CLEWS physical outputs → OG-Core macroeconomic parameters"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "python-multipart>=0.0.9",
+    "pandas>=2.0",
+    "pydantic>=2.0",
+    "PyYAML>=6.0",
+    "jsonschema>=4.0",
+    "click>=8.0",
+    "typing_extensions",
+]
+
+[project.scripts]
+clews-og-bridge = "clews_og_bridge.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
